@@ -1,18 +1,22 @@
 # Vardena
 
-Een eenvoudige, responsive homepage voor een onafhankelijk publiek archief over macht en invloed.
+Een Next.js-platform voor openbare, controleerbare berichten over publieke macht en invloed.
 
-## Starten
+## Ingebouwd
 
-Open `index.html` direct in de browser. Er is geen buildstap nodig.
+- Responsive landingspagina en openbare feed
+- E-mailregistratie en login via Supabase Auth
+- Beveiligde cookie-sessies via de Next.js Proxy
+- Berichten plaatsen met een verplichte openbare bron
+- Row Level Security: gebruikers beheren alleen hun eigen bijdragen
+- Redactionele statussen voor publicatie, verbergen en controle
 
-## Redactionele basis
+## Lokaal starten
 
-- Publiceer alleen controleerbare informatie.
-- Koppel iedere feitelijke claim aan een bron.
-- Scheid feiten, analyse en mening.
-- Geef betrokkenen ruimte voor wederhoor.
-- Toon correcties en belangrijke wijzigingen zichtbaar.
-- Gebruik geen echte beschuldigingen als tijdelijke voorbeeldinhoud.
+1. Voer npm install uit.
+2. Kopieer .env.example naar .env.local.
+3. Vul de Supabase URL, publishable key en site-URL in.
+4. Voer de migratie in supabase/migrations uit.
+5. Voer npm run dev uit.
 
-De voorbeeldkaarten op de homepage zijn daarom bewust fictief en leeg.
+Gebruik nooit een Supabase secret- of service-role-key in een NEXT_PUBLIC variabele.
