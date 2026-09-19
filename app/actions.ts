@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-const confirmationMessage = "Bij een nieuw account moet je je e-mailadres bevestigen. Controleer ook je spammap. Heb je al een bevestigd account op een van onze platforms? Log dan in met je bestaande wachtwoord; opnieuw registreren stuurt dan geen nieuwe bevestigingsmail.";
+const confirmationMessage = "Log in met je e-mailadres en wachtwoord. Heb je al een account? Gebruik dan je bestaande wachtwoord. Als voor dit account nog een bevestiging nodig is, kun je hieronder een nieuwe mail aanvragen.";
 const confirmationUrl = () => new URL("/auth/callback", process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").toString();
 
 function emailError(error: { code?: string; status?: number }) {
@@ -36,7 +36,7 @@ export async function signUp(data: FormData) {
   if(error) redirect("/signup?error="+encodeURIComponent(emailError(error)));
   if(auth.session) {
     revalidatePath("/","layout");
-    redirect("/feed");
+    redirect("/account/bevestigen");
   }
   if(!auth.user) redirect("/signup?error=Registratie+kon+niet+worden+afgerond.+Probeer+het+opnieuw.");
   console.info("[auth] Signup without session", {
@@ -44,6 +44,21 @@ export async function signUp(data: FormData) {
     confirmationRequested: Boolean(auth.user.confirmation_sent_at),
   });
   redirect("/login?message="+encodeURIComponent(confirmationMessage));
+}
+
+export async function requestEmailCheck() {
+  const supabase = await createClient();
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user?.email) redirect("/login?error=Log+eerst+in.");
+
+  // With auto-confirm enabled, signup resends do not verify ownership.
+  // A magic link lets the signed-in user check their own email optionally.
+  const { error } = await supabase.auth.signInWithOtp({
+    email: user.email,
+    options: { shouldCreateUser: false, emailRedirectTo: confirmationUrl() },
+  });
+  if (error) redirect("/account/bevestigen?error=" + encodeURIComponent(emailError(error)));
+  redirect("/account/bevestigen?sent=1");
 }
 
 export async function resendConfirmation(data: FormData) {

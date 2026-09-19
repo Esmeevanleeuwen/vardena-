@@ -50,6 +50,13 @@ blockquote{font-size:clamp(1.7rem,3vw,3rem)}
 .auth-card{padding:6vw}
 .auth-card h1{font-size:clamp(2.3rem,4vw,3.8rem);margin-bottom:15px}
 .auth-card form{margin-top:18px}
+.account-page{min-height:calc(100vh - 64px);display:grid;place-items:center;padding:40px 5vw;background:var(--soft)}
+.account-page .auth-card{width:100%;max-width:540px;padding:36px;background:var(--paper);border:1px solid var(--line)}
+.account-page .notice{margin:12px 0 0}
+.account-email{overflow-wrap:anywhere;font-weight:700}
+.defer-email{margin-top:12px}
+.account-hint{font-size:.78rem;margin-bottom:0}
+.account-link{font-size:.8rem;font-weight:700;text-decoration:none}
 footer{padding:26px 4vw}
 @media(max-width:900px){
  .hero{min-height:auto}
