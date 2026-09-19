@@ -40,3 +40,19 @@ De website meldt leesfouten apart van een lege berichtenlijst. Technische opslag
 Voer na de berichtentabel ook `20260919160342_vardena_social_features.sql` uit. Deze migratie is toegepast op het gedeelde productieproject. `vardena_members`, `vardena_reactions` en `vardena_messages` gebruiken RLS. Beide leesviews gebruiken `security_invoker=true`.
 
 Privéberichten zijn alleen leesbaar voor afzender en ontvanger. De afzender kan de inhoud na verzending niet wijzigen; alleen de ontvanger kan een bericht als gelezen markeren. De API gebruikt `Cache-Control: private, no-store`. Publieke profielen bevatten geen e-mailadressen. Nieuwe functies gebruiken de bestaande publishable key en gebruikerssessie, geen service-role-key.
+# Organisaties
+
+Organisaties melden zich aan via `/organisaties/nieuw` en worden vanuit een eigen
+persoonlijk account beheerd. Het openbare profiel bevat missie, standpunten,
+werkwijze en optioneel een manifest. In de besloten groep staan ledenbeheer,
+aanmeldingen, groepschat, likes, publicaties en persoonlijke opdrachten met
+checklists. De eigenaar benoemt beheerders; afvinken doet het toegewezen lid.
+
+De startpagina opent nu de openbare populaire tijdlijn. De berekening en grenzen
+staan op `/over`. Het moduleontwerp, uitbreidingsplan en rechten staan in
+`docs/organizations.md`; Nuncius' originele manifest in `docs/nuncius-manifest.md`.
+
+Voer `20260919171658_vardena_organizations.sql` na de eerdere Vardena-migraties uit.
+`scripts/test-organizations.cjs` controleert de echte databaserechten met tijdelijke
+accounts. Het script vereist expliciete testprojectvariabelen en laat alleen ids
+van op te ruimen fixtures achter. Gebruik geen bestaande gebruikers als fixtures.

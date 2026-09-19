@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeReturnPath } from "@/lib/return-path";
 
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -21,9 +22,12 @@ function emailError(error: { code?: string; status?: number }) {
 }
 
 export async function signUp(data: FormData) {
+  const organization = field(data,"accountType") === "organization";
+  const next = organization ? "/organisaties/nieuw" : safeReturnPath(field(data,"next"));
+  const signupError = `/signup?type=${organization ? "organisatie" : "persoon"}&next=${encodeURIComponent(next)}&error=`;
   const email=field(data,"email"), password=String(data.get("password") ?? ""), displayName=field(data,"displayName");
   const username=field(data,"username").toLowerCase().replace(/[^a-z0-9_]/g,"");
-  if(!validEmail(email)||password.length<8||!displayName||displayName.length>80||username.length<3||username.length>30) redirect("/signup?error=Vul+alle+velden+goed+in.");
+  if(!validEmail(email)||password.length<8||!displayName||displayName.length>80||username.length<3||username.length>30) redirect(signupError+"Vul+alle+velden+goed+in.");
   const supabase=await createClient();
   const { data: auth, error }=await supabase.auth.signUp({email,password,options:{
     emailRedirectTo:confirmationUrl(),
@@ -31,21 +35,21 @@ export async function signUp(data: FormData) {
   }});
   // Keep the public response neutral: Supabase can conceal existing accounts.
   if(error?.code === "user_already_exists" || error?.code === "email_exists") {
-    redirect("/login?message="+encodeURIComponent(confirmationMessage));
+    redirect("/login?next="+encodeURIComponent(next)+"&message="+encodeURIComponent(confirmationMessage));
   }
-  if(error) redirect("/signup?error="+encodeURIComponent(emailError(error)));
+  if(error) redirect(signupError+encodeURIComponent(emailError(error)));
   if(auth.session) {
     const { error: profileError } = await supabase.from("vardena_members").upsert({ id: auth.session.user.id, username, display_name: displayName, bio: "" }, { onConflict: "id" });
     if(profileError) redirect("/account/profiel");
     revalidatePath("/","layout");
-    redirect("/account/bevestigen");
+    redirect(next !== "/feed" ? next : "/account/bevestigen");
   }
   if(!auth.user) redirect("/signup?error=Registratie+kon+niet+worden+afgerond.+Probeer+het+opnieuw.");
   console.info("[auth] Signup without session", {
     hasIdentity: (auth.user.identities?.length ?? 0) > 0,
     confirmationRequested: Boolean(auth.user.confirmation_sent_at),
   });
-  redirect("/login?message="+encodeURIComponent(confirmationMessage));
+  redirect("/login?next="+encodeURIComponent(next)+"&message="+encodeURIComponent(confirmationMessage));
 }
 
 export async function requestEmailCheck() {
@@ -76,7 +80,7 @@ export async function resendConfirmation(data: FormData) {
 
 export async function login(data: FormData) {
   const requestedNext = field(data,"next");
-  const next = /^\/(?:feed|inbox(?:\/[a-f0-9-]{36})?|account\/profiel|bericht\/[a-f0-9-]{36})$/.test(requestedNext) ? requestedNext : "/feed";
+  const next = safeReturnPath(requestedNext);
   const errorUrl = "/login?next=" + encodeURIComponent(next) + "&error=";
   const supabase=await createClient();
   const { error }=await supabase.auth.signInWithPassword({email:field(data,"email"),password:String(data.get("password") ?? "")});
