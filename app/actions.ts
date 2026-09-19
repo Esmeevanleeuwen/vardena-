@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { safeReturnPath } from "@/lib/return-path";
+import { publishPost } from "@/lib/publish-post";
+import type { ActionState } from "@/lib/organization-types";
 
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -97,27 +99,15 @@ export async function logout() {
   redirect("/");
 }
 
-export async function createPost(data: FormData) {
+export async function createPost(_state: ActionState, data: FormData): Promise<ActionState> {
   const supabase=await createClient();
   const { data: auth, error: authError }=await supabase.auth.getUser();
   const userId=authError ? undefined : auth.user?.id;
-  if(!userId) redirect("/login?error=Log+eerst+in.");
-  const subject_name=field(data,"subjectName"),title=field(data,"title"),body=field(data,"body");
-  const category=field(data,"category");
-  let source_url=field(data,"sourceUrl");
-  let validSource = false;
-  try {
-    const source = new URL(source_url);
-    validSource = source.protocol === "https:" && Boolean(source.hostname) && !source.username && !source.password && !/\s/.test(source_url) && source.href.length <= 2048;
-    if (validSource) source_url = source.href;
-  } catch { /* Invalid source URLs are rejected below. */ }
-  if(subject_name.length<2||subject_name.length>120||title.length<5||title.length>140||body.length<20||body.length>3000||!["politiek","media","bedrijfsleven","overig"].includes(category)||!validSource) redirect("/feed?error=Vul+alle+velden+en+een+geldige+https-bron+in.#nieuw");
-  const { error }=await supabase.from("posts").insert({author_id:userId,subject_name,title,body,category,source_url});
-  if(error) {
-    console.error("[posts] Create failed", { code: error.code });
-    redirect("/feed?error=Je+bericht+kon+niet+worden+opgeslagen.+Probeer+het+opnieuw.#nieuw");
-  }
+  if(!userId) return { error: "Je sessie is verlopen. Log opnieuw in om te publiceren." };
+  const result = await publishPost(supabase, userId, data, field(data,"organizationId") || null);
+  if (result.error) return { error: result.error };
   revalidatePath("/");
   revalidatePath("/feed");
-  redirect("/feed?message=Je+bericht+is+geplaatst.");
+  revalidatePath("/organisaties", "layout");
+  redirect(`/feed?sort=nieuw&geplaatst=${result.id}&message=Je+bericht+is+geplaatst.`);
 }

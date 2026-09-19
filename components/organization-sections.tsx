@@ -5,6 +5,7 @@ import { OrganizationChecklist } from "./organization-checklist";
 import { Avatar } from "./social-icon";
 import { createAssignment,createOrganizationPost,manageMembership,removeAssignment } from "@/app/organization-actions";
 import { isManager,orgMemberFields,roleLabels,type Assignment,type Organization,type OrgMember } from "@/lib/organization-types";
+import { PostFields } from "./post-fields";
 
 type Context={supabase:SupabaseClient;org:Organization;membership:OrgMember};
 export async function GroupOverview({supabase,org,membership,pending}:{pending:number}&Context){
@@ -56,6 +57,6 @@ export async function GroupAssignments({supabase,org,membership,page,memberSearc
 }
 
 export function GroupPublish({org}:{org:Organization}){
-  return <section className="social-panel"><h2>Publiceer namens {org.name}</h2><p>Dit bericht verschijnt openbaar onder de organisatienaam, met een link naar jullie profiel.</p><ActionForm action={createOrganizationPost.bind(null,org.id)} label="Openbaar publiceren" pendingLabel="Publiceren…"><div className="form-row"><label>Over wie?<input name="subjectName" required minLength={2} maxLength={120}/></label><label>Categorie<select name="category"><option value="politiek">Politiek</option><option value="media">Media</option><option value="bedrijfsleven">Bedrijfsleven</option><option value="overig">Overig</option></select></label></div><label>Titel<input name="title" required minLength={5} maxLength={140}/></label><label>Bericht<textarea name="body" required minLength={20} maxLength={3000} rows={7}/></label><label>Openbare bron<input type="url" name="sourceUrl" required maxLength={2048} placeholder="https://…"/></label><p className="small-copy muted">Maak duidelijk wat de bron aantoont en welke onzekerheden er zijn. Een bron of veel likes maakt een claim niet automatisch waar.</p></ActionForm></section>;
+  return <section className="social-panel"><h2>Publiceer namens {org.name}</h2><p>Dit bericht verschijnt openbaar onder de organisatienaam, met een link naar jullie profiel.</p><ActionForm action={createOrganizationPost.bind(null,org.id)} label="Openbaar publiceren" pendingLabel="Publiceren…"><PostFields/></ActionForm></section>;
 }
 export function GroupSettings({org}:{org:Organization}){return <section className="social-panel"><h2>Openbaar organisatieprofiel</h2><OrganizationForm organization={org}/></section>;}

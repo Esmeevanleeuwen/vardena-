@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SocialIcon, type IconName } from "./social-icon";
 export function SocialShell({ children, active = "feed", signedIn = false }: { children: React.ReactNode; active?: string; signedIn?: boolean }) {
   const links: { href: string; label: string; icon: IconName; key: string }[] = [
-    { href: "/feed", label: "Tijdlijn", icon: "home", key: "feed" },
+    { href: "/feed", label: "Home", icon: "home", key: "feed" },
     { href: "/organisaties", label: "Organisaties", icon: "building", key: "organizations" },
     { href: "/mensen", label: "Mensen", icon: "users", key: "people" },
     { href: "/inbox", label: "Inbox", icon: "mail", key: "inbox" },

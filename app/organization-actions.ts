@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/social-types";
 import { isManager, type ActionState, type OrgMessage } from "@/lib/organization-types";
+import { publishPost } from "@/lib/publish-post";
 
 const field = (data: FormData, name: string) => String(data.get(name) ?? "").trim();
 const failure = (error: { code?: string } | null, fallback: string): ActionState => ({ error: error?.code === "23505" ? "Deze naam in de link is al bezet. Kies een andere." : fallback });
@@ -107,15 +108,10 @@ export async function removeAssignment(assignmentId: string, _state: ActionState
 }
 
 export async function createOrganizationPost(orgId: string, _state: ActionState, data: FormData): Promise<ActionState> {
-  const title=field(data,"title"), body=field(data,"body"), subject_name=field(data,"subjectName"), category=field(data,"category"), source_url=field(data,"sourceUrl");
-  let source: URL;
-  try { source = new URL(source_url); } catch { return { error:"Voeg een geldige openbare https-bron toe." }; }
-  if (!isUuid(orgId) || title.length < 5 || title.length > 140 || body.length < 20 || body.length > 3000 || subject_name.length < 2 || subject_name.length > 120 || !["politiek","media","bedrijfsleven","overig"].includes(category) || source.protocol !== "https:" || source.username || source.password || /\s/.test(source_url) || source.href.length > 2048) return { error:"Controleer de velden en je openbare https-bron." };
+  if (!isUuid(orgId)) return { error: "Kies een geldige organisatie." };
   const { supabase, user } = await actor();
   if (!user) return { error:"Log opnieuw in." };
-  const { data: membership } = await supabase.from("vardena_org_members").select("role").eq("org_id",orgId).eq("user_id",user.id).eq("status","active").maybeSingle();
-  if (!isManager(membership?.role)) return { error:"Alleen beheerders publiceren namens de organisatie." };
-  const result = await supabase.from("posts").insert({ author_id:user.id,organization_id:orgId,title,body,subject_name,category,source_url:source.href }).select("id").single();
-  if (result.error) return { error:"Publiceren lukt nu niet. Je tekst blijft staan." };
-  refresh(); redirect(`/bericht/${result.data.id}`);
+  const result = await publishPost(supabase, user.id, data, orgId);
+  if (result.error) return { error: result.error };
+  refresh(); redirect(`/bericht/${result.id}`);
 }
