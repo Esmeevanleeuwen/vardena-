@@ -90,14 +90,24 @@ export async function logout() {
 
 export async function createPost(data: FormData) {
   const supabase=await createClient();
-  const { data: auth }=await supabase.auth.getClaims();
-  const userId=auth?.claims?.sub;
+  const { data: auth, error: authError }=await supabase.auth.getUser();
+  const userId=authError ? undefined : auth.user?.id;
   if(!userId) redirect("/login?error=Log+eerst+in.");
   const subject_name=field(data,"subjectName"),title=field(data,"title"),body=field(data,"body");
-  const category=field(data,"category"),source_url=field(data,"sourceUrl");
-  if(subject_name.length<2||title.length<5||body.length<20||!source_url.startsWith("https://")) redirect("/feed?error=Vul+alle+velden+en+een+geldige+https-bron+in.#nieuw");
+  const category=field(data,"category");
+  let source_url=field(data,"sourceUrl");
+  let validSource = false;
+  try {
+    const source = new URL(source_url);
+    validSource = source.protocol === "https:" && Boolean(source.hostname) && !source.username && !source.password && !/\s/.test(source_url) && source.href.length <= 2048;
+    if (validSource) source_url = source.href;
+  } catch { /* Invalid source URLs are rejected below. */ }
+  if(subject_name.length<2||subject_name.length>120||title.length<5||title.length>140||body.length<20||body.length>3000||!["politiek","media","bedrijfsleven","overig"].includes(category)||!validSource) redirect("/feed?error=Vul+alle+velden+en+een+geldige+https-bron+in.#nieuw");
   const { error }=await supabase.from("posts").insert({author_id:userId,subject_name,title,body,category,source_url});
-  if(error) redirect("/feed?error="+encodeURIComponent(error.message)+"#nieuw");
+  if(error) {
+    console.error("[posts] Create failed", { code: error.code });
+    redirect("/feed?error=Je+bericht+kon+niet+worden+opgeslagen.+Probeer+het+opnieuw.#nieuw");
+  }
   revalidatePath("/");
   revalidatePath("/feed");
   redirect("/feed?message=Je+bericht+is+geplaatst.");
