@@ -89,7 +89,7 @@ function request(route, authenticated = true) {
     request('/feed'), request('/feed?type=photo&sort=nieuw&onderwerp=overig',false), request('/feed?type=announcement',false), request('/api/feed/status?type=photo&sort=nieuw&onderwerp=overig',false), request(`/bericht/${photo.data.id}`,false), request(`/organisaties/${org.data.slug}/groep?tab=publiceren`),
   ]);
   pages.forEach(r=>{assert.equal(r.status,200);assert.ok(!r.body.includes('Er ging iets mis'));});
-  assert.ok(pages[0].body.includes('Welkom terug.')); assert.ok(pages[0].body.includes('Plaatsen als')); assert.ok(pages[0].body.includes('Mijn groepen'));
+  assert.ok(pages[0].body.includes('Jouw tijdlijn.')); assert.ok(pages[0].body.includes('Plaatsen als')); assert.ok(pages[0].body.includes('Mijn groepen'));
   assert.ok(pages[1].body.includes('Tijdelijk testbeeld van één pixel')); assert.ok(pages[1].body.includes('storage/v1/object/sign/'));
   assert.ok(pages[2].body.includes('Mededeling')); assert.ok(pages[2].body.includes('Tijdelijke homepagetest'));
   assert.equal(JSON.parse(pages[3].body).fingerprint,feedFingerprint(status.data,status.count)); assert.ok(pages[3].headers['cache-control'].includes('no-store'));

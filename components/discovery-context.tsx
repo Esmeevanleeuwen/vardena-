@@ -1,0 +1,8 @@
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { Avatar, SocialIcon } from "./social-icon";
+export async function DiscoveryContext({ signedIn }: { signedIn: boolean }) {
+  const client = await createClient();
+  const { data: organizations } = await client.from("vardena_organizations").select("id,name,slug,summary").order("created_at", { ascending: false }).limit(3);
+  return <><div className="context-card discovery-mission"><div className="context-symbol"><SocialIcon name="spark"/></div><p className="eyebrow">Kijk verder</p><h2>Een claim is het begin.<br/>Een bron maakt het gesprek.</h2><p>Lees, onderzoek en stel vragen. Populariteit is geen bewijs.</p><Link className="text-link" href="/over">Onze belofte aan jou ↗</Link></div><div className="context-card discovery-organizations"><div className="context-heading"><h3>Ontdek collectieven</h3><SocialIcon name="building"/></div>{organizations?.length ? organizations.map(org => <Link className="discovery-org" href={`/organisaties/${org.slug}`} key={org.id}><Avatar name={org.name}/><div><strong>{org.name}</strong><p>{org.summary}</p><span>Bekijk organisatie ↗</span></div></Link>) : <p>Werk samen aan controleerbare informatie.</p>}<Link className="text-link" href="/organisaties">Alle organisaties →</Link></div><Link className="reading-list-card" href={signedIn ? "/opgeslagen" : "/login?next=/opgeslagen"}><SocialIcon name="bookmark"/><div><strong>Voor later bewaren</strong><span>Jouw persoonlijke leeslijst</span></div><span aria-hidden="true">↗</span></Link><p className="context-footer">Openbaar waar het kan.<br/>Privé waar het hoort.</p></>;
+}

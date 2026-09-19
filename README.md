@@ -56,3 +56,36 @@ Voer `20260919171658_vardena_organizations.sql` na de eerdere Vardena-migraties 
 `scripts/test-organizations.cjs` controleert de echte databaserechten met tijdelijke
 accounts. Het script vereist expliciete testprojectvariabelen en laat alleen ids
 van op te ruimen fixtures achter. Gebruik geen bestaande gebruikers als fixtures.
+
+## Homepage, zoeken en gesprekken
+
+De homepage gebruikt losse berichtkaarten met type- en onderwerpfilters, een live
+activiteitsindicator en een blok met echte organisaties. De achtergrond blijft wit.
+`20260919180136_vardena_home_feed_media.sql` voegt mededelingen en privé opgeslagen
+foto-bestanden toe; openbare foto-posts geven tijdelijk leesbare afbeeldingslinks.
+
+Voer daarna `20260919182628_vardena_discovery_bookmarks_comments.sql` uit:
+
+- Zoeken (`/feed?q=...`) gebruikt Nederlandse full-text search in titel, onderwerp
+  en inhoud. Zoeken, soort bijdrage, onderwerp, sortering en paginering werken samen.
+- Bladwijzers staan in `vardena_bookmarks`. `/opgeslagen` vereist een sessie en toont
+  uitsluitend de eigen leeslijst; RLS beschermt dit ook bij directe API-aanroepen.
+- `vardena_comments` bevat echte openbare reacties van opt-in Vardena-profielen.
+  Alleen de auteur mag een reactie verwijderen. Een verborgen bovenliggend bericht
+  verbergt ook de reacties en tellingen. De status en datum zijn niet client-wijzigbaar.
+- Reacties hebben maximaal 1200 tekens. De client maakt één id per concept aan,
+  zodat een herhaalde serveractie geen dubbele reactie plaatst. Tekst wordt escaped.
+- Alle nieuwe views zijn `security_invoker`. Er is geen service-key in de app.
+
+Verificatie: `npm run lint`, `npm run build -- --webpack`, daarna optioneel
+`ALLOW_LIVE_TESTS=1 node --env-file=.env.local scripts/test-discovery.cjs`.
+Dit laatste script maakt expliciet herkenbare tijdelijke accounts en een bericht,
+test echte serveracties, RLS en gerenderde pagina’s, verwijdert zijn content en trekt
+de sessies in. Verwijder aansluitend uitsluitend de afgedrukte testaccount-ids via
+het beheer. Draai bij voorkeur op een apart testproject; het script is standaard uit.
+
+Uitbreiden kan per module: meldingen op basis van echte reacties, meldknoppen met
+een besloten moderatiewachtrij, of opgeslagen zoekopdrachten. Voeg daarvoor eigen
+tabellen met RLS en tests toe. Bewaarde berichten en privégesprekken mogen nooit in
+publieke ranglijsten of activiteitsoverzichten terechtkomen. Er is geen kunstmatige
+activiteit, nepaccounts voor engagement of gemanipuleerde publicatiedatum toegevoegd.

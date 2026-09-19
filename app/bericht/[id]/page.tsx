@@ -5,7 +5,9 @@ import { isUuid } from "@/lib/social-types";
 import { enrichPosts, postFields, type RawPost } from "@/lib/posts";
 import { PostCard } from "@/components/post-card";
 import { SocialShell } from "@/components/social-shell";
-export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
+import { Comments } from "@/components/comments";
+import { Suspense } from "react";
+export default async function PostPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ reactiesPagina?: string }> }) {
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const supabase = await createClient();
@@ -14,5 +16,6 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!data) notFound();
   const viewerId = auth?.claims?.sub;
   const [post] = await enrichPosts(supabase, [data as unknown as RawPost], viewerId);
-  return <SocialShell signedIn={Boolean(viewerId)}><header className="timeline-heading"><Link className="back-link" href="/feed">← Terug naar de tijdlijn</Link><h1>Bericht</h1></header><PostCard post={post} viewerId={viewerId} full/></SocialShell>;
+  const page = Math.min(10000, Math.max(1, Math.floor(Number((await searchParams).reactiesPagina) || 1)));
+  return <SocialShell signedIn={Boolean(viewerId)}><header className="timeline-heading"><Link className="back-link" href="/feed">← Terug naar de tijdlijn</Link><h1>Bericht</h1></header><PostCard post={post} viewerId={viewerId} full/><Suspense fallback={<p className="saved-note">Reacties laden…</p>}><Comments postId={id} viewerId={viewerId} page={page}/></Suspense></SocialShell>;
 }

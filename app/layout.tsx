@@ -5,6 +5,7 @@ import { logout } from "./actions";
 import "./globals.css";
 import "./organizations.css";
 import "./feed.css";
+import "./discovery.css";
 
 export const metadata:Metadata={title:"Vardena — Publieke macht zichtbaar",description:"Een openbaar platform voor controleerbare dossiers over macht en invloed."};
 

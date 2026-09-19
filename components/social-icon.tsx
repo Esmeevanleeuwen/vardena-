@@ -1,6 +1,13 @@
-export type IconName = "like" | "dislike" | "share" | "mail" | "home" | "users" | "person" | "arrow" | "building";
+export type IconName = "like" | "dislike" | "share" | "mail" | "home" | "users" | "person" | "arrow" | "building" | "bookmark" | "comment" | "search" | "photo" | "megaphone" | "grid" | "spark";
 export function SocialIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
+    bookmark: <path d="M6 3h12v18l-6-4-6 4Z"/>,
+    comment: <path d="M21 11a8 8 0 0 1-8 8H7l-5 3 2-6a8 8 0 0 1-1-5 9 9 0 0 1 18 0Z"/>,
+    search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,
+    photo: <><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 4 4 3-3 5 5"/></>,
+    megaphone: <><path d="m3 9 17-6v18L3 15ZM7 16l1 5h4l-1-4M3 9v6"/></>,
+    grid: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+    spark: <path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/>,
     like: <><path d="M7 10h-4v11h4M7 10l5-8c2 0 3 2 2 5l-1 3h6a2 2 0 0 1 2 2l-2 7a3 3 0 0 1-3 2H7Z" /></>,
     dislike: <g transform="rotate(180 12 12)"><path d="M7 10h-4v11h4M7 10l5-8c2 0 3 2 2 5l-1 3h6a2 2 0 0 1 2 2l-2 7a3 3 0 0 1-3 2H7Z" /></g>,
     share: <><path d="M12 16V3m-5 5 5-5 5 5M5 13v7h14v-7" /></>,
