@@ -1,6 +1,7 @@
-export type IconName = "like" | "dislike" | "share" | "mail" | "home" | "users" | "person" | "arrow" | "building" | "bookmark" | "comment" | "search" | "photo" | "megaphone" | "grid" | "spark";
+export type IconName = "like" | "dislike" | "share" | "mail" | "home" | "users" | "person" | "arrow" | "building" | "bookmark" | "comment" | "search" | "photo" | "megaphone" | "grid" | "spark" | "list";
 export function SocialIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, React.ReactNode> = {
+    list: <><circle cx="5" cy="5" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="5" cy="19" r="1"/><path d="M10 5h11M10 12h11M10 19h11"/></>,
     bookmark: <path d="M6 3h12v18l-6-4-6 4Z"/>,
     comment: <path d="M21 11a8 8 0 0 1-8 8H7l-5 3 2-6a8 8 0 0 1-1-5 9 9 0 0 1 18 0Z"/>,
     search: <><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></>,

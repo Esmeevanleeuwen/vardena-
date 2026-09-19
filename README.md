@@ -89,3 +89,39 @@ een besloten moderatiewachtrij, of opgeslagen zoekopdrachten. Voeg daarvoor eige
 tabellen met RLS en tests toe. Bewaarde berichten en privégesprekken mogen nooit in
 publieke ranglijsten of activiteitsoverzichten terechtkomen. Er is geen kunstmatige
 activiteit, nepaccounts voor engagement of gemanipuleerde publicatiedatum toegevoegd.
+
+## Personenlijsten met Wikipedia
+
+`20260919185710_vardena_person_lists.sql` voegt het berichttype `list` toe.
+Een lijst heeft dezelfde titel, samenvatting, categorie, auteursrechten, reacties,
+likes, bladwijzers en deelbare berichtpagina als andere bijdragen. De tijdlijn toont
+drie personen; de uitklapknop toont de rest. De volledige berichtpagina opent alles.
+De berichtpagina geeft titel en samenvatting mee als Open Graph- en Twitter-metadata.
+
+Kies **Personenlijst** bij een nieuw bericht, of **Lijsten → Lijst maken**. Met
+`@naam` zoekt de editor via `/api/people/search` in Wikidata. Alleen mensen (Q5) met
+een Nederlandse of Engelse Wikipedia-pagina zijn selecteerbaar. Namen en links
+worden bij publicatie opnieuw opgehaald aan de hand van het gekozen Wikidata-id.
+Er wordt geen API-key gebruikt. Verzoeken zijn begrensd, hebben een timeout en
+worden gecachet; de app haalt nooit een door de gebruiker aangeleverde URL op.
+
+De tabelimport accepteert Markdown of tabgescheiden kolommen: persoon, dossier,
+toelichting, bewijsinschatting en optioneel een bronlink. Twee namen met ` / `
+krijgen aparte regels. Automatisch koppelen kiest alleen één exacte naamsovereenkomst;
+onduidelijke matches blijven voor handmatige keuze. De limiet is 30 personen.
+De import publiceert niets: titel, samenvatting, koppelingen en tekst blijven eerst
+in het formulier staan. Wikipedia identificeert de persoon; dossierclaims en
+bewijsinschattingen zijn tekst van de auteur.
+
+De JSON-lijst wordt in één insert met het bericht opgeslagen. Een databaseconstraint
+valideert de structuur, aantallen, dubbele ids, tekstlengtes en Wikipedia-domeinen.
+De bestaande RLS blijft gelden; clients kunnen de opgeslagen lijst en het type
+niet achteraf direct wijzigen. Persoonsnamen en dossierinhoud tellen mee in zoeken.
+
+Verificatie: `scripts/test-person-lists.cjs` controleert de voorbeeldtabelindeling,
+echte Wikipedia-resultaten, normalisatie bij publicatie, databasevalidatie,
+toegangsrechten, zoekfilters en de gerenderde drie-/volledige lijst. Vereist
+`ALLOW_LIVE_TESTS=1` en dezelfde publieke omgevingsvariabelen als de app.
+`KEEP_LIST_FIXTURE_FOR_BROWSER=1` laat herkenbare testberichten tijdelijk staan
+voor een browsercontrole; verwijder daarna exact de afgedrukte testaccount-id.
+Normaal verwijdert het script de inhoud zelf en trekt het altijd de testsessie in.

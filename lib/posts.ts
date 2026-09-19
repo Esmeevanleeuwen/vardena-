@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Member } from "@/lib/social-types";
 import { PHOTO_BUCKET, type FeedType, type PostKind } from "./feed-types";
-export const postFields = "id,author_id,organization_id,title,body,subject_name,category,source_url,created_at,updated_at,kind,media_path,media_alt,profiles(display_name,username),vardena_organizations(id,slug,name)";
-export type RawPost = { id: string; author_id: string; organization_id: string | null; title: string; body: string; subject_name: string; category: string; source_url: string | null; created_at: string; updated_at: string; kind: PostKind; media_path: string | null; media_alt: string | null; profiles: { display_name: string; username: string } | null; vardena_organizations: { id: string; slug: string; name: string } | null };
+import type { PersonListEntry } from "./person-lists";
+export const postFields = "id,author_id,organization_id,title,body,subject_name,category,source_url,created_at,updated_at,kind,media_path,media_alt,people_list,profiles(display_name,username),vardena_organizations(id,slug,name)";
+export type RawPost = { id: string; author_id: string; organization_id: string | null; title: string; body: string; subject_name: string; category: string; source_url: string | null; created_at: string; updated_at: string; kind: PostKind; media_path: string | null; media_alt: string | null; people_list: PersonListEntry[]; profiles: { display_name: string; username: string } | null; vardena_organizations: { id: string; slug: string; name: string } | null };
 export type PublicPost = RawPost & { member?: Member; photoUrl?: string; likes: number; dislikes: number; vote: number; reactionsAvailable: boolean; comments: number; commentsAvailable: boolean; bookmarked: boolean; bookmarksAvailable: boolean };
 export async function enrichPosts(supabase: SupabaseClient, posts: RawPost[], userId?: string): Promise<PublicPost[]> {
   if (!posts.length) return [];

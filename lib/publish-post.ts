@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { isUuid } from "./social-types";
 import { isManager } from "./organization-types";
 import { MAX_PHOTO_BYTES, PHOTO_BUCKET, topics } from "./feed-types";
+import { parsePersonList, type PersonListEntry } from "./person-lists";
+import { resolveWikipediaPeople } from "./wikipedia";
 
 // Runs only on the server, always with the signed-in user's client (never a service key).
 export async function publishPost(supabase: SupabaseClient, userId: string, data: FormData, organizationId: string | null = null): Promise<{ id?: string; error?: string }> {
@@ -9,7 +11,7 @@ export async function publishPost(supabase: SupabaseClient, userId: string, data
   const title = field("title"), body = field("body"), subject_name = field("subjectName"), category = field("category");
   const kind = field("kind") || "post", media_alt = field("photoAlt");
   let source_url: string | null = field("sourceUrl") || null;
-  if (!["post", "announcement", "photo"].includes(kind) || title.length < 5 || title.length > 140 || body.length < 20 || body.length > 3000 || subject_name.length < 2 || subject_name.length > 120 || !topics.some(t => t === category)) return { error: "Controleer de velden. Gebruik een titel van 5–140 tekens en een bericht van 20–3000 tekens." };
+  if (!["post", "announcement", "photo", "list"].includes(kind) || title.length < 5 || title.length > 140 || body.length < 20 || body.length > 3000 || subject_name.length < 2 || subject_name.length > 120 || !topics.some(t => t === category)) return { error: "Controleer de velden. Gebruik een titel van 5–140 tekens en een bericht van 20–3000 tekens." };
   if (source_url) {
     try {
       const source = new URL(source_url);
@@ -24,6 +26,19 @@ export async function publishPost(supabase: SupabaseClient, userId: string, data
     if (error || !isManager(membership?.role)) return { error: "Alleen beheerders publiceren namens de organisatie." };
   }
   let media_path: string | null = null;
+  let people_list: PersonListEntry[] = [];
+  if (kind === "list") {
+    try {
+      people_list = parsePersonList(field("peopleList"));
+      const people = await resolveWikipediaPeople(people_list.map(person => person.wikidataId));
+      const canonical = new Map(people.map(person => [person.wikidataId, person]));
+      people_list = people_list.map(row => {
+        const person = canonical.get(row.wikidataId);
+        if (!person) throw new Error(`Kies ${row.name} opnieuw uit de Wikipedia-suggesties.`);
+        return { ...row, name: person.name, wikipediaUrl: person.wikipediaUrl };
+      });
+    } catch (error) { return { error: error instanceof Error ? error.message : "Controleer je personenlijst en probeer opnieuw." }; }
+  }
   if (kind === "photo") {
     const file = data.get("photo");
     if (!(file instanceof File) || !file.size || file.size > MAX_PHOTO_BYTES) return { error: "Kies een foto van maximaal 3 MB." };
@@ -38,7 +53,7 @@ export async function publishPost(supabase: SupabaseClient, userId: string, data
     const upload = await supabase.storage.from(PHOTO_BUCKET).upload(media_path, bytes, { contentType: file.type, upsert: false, cacheControl: "300" });
     if (upload.error) return { error: "De foto uploaden lukt niet. Je tekst blijft staan; probeer het opnieuw." };
   }
-  const result = await supabase.from("posts").insert({ author_id: userId, organization_id: organizationId, title, body, subject_name, category, kind, source_url, media_path, media_alt: media_path ? media_alt : null }).select("id").single();
+  const result = await supabase.from("posts").insert({ author_id: userId, organization_id: organizationId, title, body, subject_name, category, kind, source_url, media_path, media_alt: media_path ? media_alt : null, people_list }).select("id").single();
   if (result.error) {
     if (media_path) await supabase.storage.from(PHOTO_BUCKET).remove([media_path]);
     console.error("[posts] Publish failed", { code: result.error.code });

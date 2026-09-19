@@ -3,6 +3,7 @@ export const feedTypes = [
   { value: "post", label: "Posts" },
   { value: "announcement", label: "Mededelingen" },
   { value: "photo", label: "Foto’s" },
+  { value: "list", label: "Lijsten" },
 ] as const;
 export type FeedType = typeof feedTypes[number]["value"];
 export type PostKind = Exclude<FeedType, "all">;

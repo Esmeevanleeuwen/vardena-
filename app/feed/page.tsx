@@ -12,9 +12,9 @@ import { Avatar, SocialIcon, type IconName } from "@/components/social-icon";
 import { DiscoveryContext } from "@/components/discovery-context";
 import { enrichPosts, readTimeline, type RawPost } from "@/lib/posts";
 import { feedTypes, feedType, feedTopic, feedSearch, feedHref, feedFingerprint, topics, type FeedType } from "@/lib/feed-types";
-type Props = { searchParams: Promise<{ error?: string; message?: string; pagina?: string; sort?: string; type?: string; onderwerp?: string; geplaatst?: string; q?: string }> };
+type Props = { searchParams: Promise<{ error?: string; message?: string; pagina?: string; sort?: string; type?: string; onderwerp?: string; geplaatst?: string; q?: string; schrijven?: string }> };
 type Group = { role: string; vardena_organizations: { id: string; slug: string; name: string } | null };
-const tabIcons: Record<FeedType, IconName> = { all: "grid", post: "comment", announcement: "megaphone", photo: "photo" };
+const tabIcons: Record<FeedType, IconName> = { all: "grid", post: "comment", announcement: "megaphone", photo: "photo", list: "list" };
 export default async function FeedPage({ searchParams }: Props) {
   const params = await searchParams, supabase = await createClient();
   const popular = params.sort !== "nieuw", type = feedType(params.type), topic = feedTopic(params.onderwerp), search = feedSearch(params.q);
@@ -37,10 +37,10 @@ export default async function FeedPage({ searchParams }: Props) {
     <form className="feed-search" action="/feed" role="search" key={`${type}:${popular}:${topic}:${search}`}><SocialIcon name="search"/><label className="sr-only" htmlFor="feed-search">Zoek in berichten</label><input id="feed-search" type="search" name="q" defaultValue={search} maxLength={100} placeholder="Zoek een onderwerp, naam of verhaal…"/><input type="hidden" name="type" value={type}/><input type="hidden" name="sort" value={popular ? "populair" : "nieuw"}/>{topic ? <input type="hidden" name="onderwerp" value={topic}/> : null}<button type="submit">Zoeken</button></form>
     {params.error ? <p className="social-notice error" role="alert">{params.error}</p> : null}{params.message ? <p className="social-notice success" role="status">{params.message}</p> : null}
     {viewerId ? <>
-      <PostComposer key={params.geplaatst ?? "draft"} initiallyOpen={Boolean(params.error)}><summary><Avatar name={name}/><span>Wat wil je delen, {name}?<small>Een inzicht, een update of een foto</small></span><span className="composer-plus" aria-hidden="true">+</span></summary>
+      <PostComposer key={`${params.geplaatst ?? "draft"}:${params.schrijven ?? "post"}`} initiallyOpen={Boolean(params.error) || params.schrijven === "lijst"}><summary><Avatar name={name}/><span>Wat wil je delen, {name}?<small>Een post, update, foto of personenlijst</small></span><span className="composer-plus" aria-hidden="true">+</span></summary>
         <ActionForm action={createPost} label="Openbaar publiceren" pendingLabel="Publiceren…">
           {publishers.length ? <label>Plaatsen als<select name="organizationId"><option value="">{name} · persoonlijk</option>{publishers.map(g => <option key={g.vardena_organizations!.id} value={g.vardena_organizations!.id}>{g.vardena_organizations!.name} · organisatie</option>)}</select></label> : null}
-          <PostFields/>
+          <PostFields initialKind={params.schrijven === "lijst" ? "list" : "post"}/>
         </ActionForm>
       </PostComposer>
       {groups.length ? <div className="home-groups"><span>Mijn groepen</span>{groups.map(g => g.vardena_organizations ? <Link key={g.vardena_organizations.id} href={`/organisaties/${g.vardena_organizations.slug}/groep`}>{g.vardena_organizations.name} ↗</Link> : null)}</div> : null}
@@ -51,6 +51,7 @@ export default async function FeedPage({ searchParams }: Props) {
       <nav className="feed-topics" aria-label="Onderwerp filteren"><Link href={feedHref(type,popular,"",1,search)} className={!topic ? "active" : ""} aria-current={!topic ? "page" : undefined}>Alles ontdekken</Link>{topics.map(t => <Link key={t} href={feedHref(type,popular,t,1,search)} className={topic === t ? "active" : ""} aria-current={topic === t ? "page" : undefined}>{t[0].toUpperCase()+t.slice(1)}</Link>)}</nav>
       <p className="feed-ranking">{popular ? "Likes − dislikes bepalen de volgorde. Populariteit is geen bewijs." : "Nieuwste eerst. Geen persoonlijke selectie of betaalde voorrang."} <Link href="/over">Uitleg</Link></p>
     </div>
+    {type === "list" ? <div className="list-feed-intro"><div><strong>Personen, dossiers en context.</strong><p>Deel een lijst met een titel, samenvatting en Wikipedia-links.</p></div><Link className="button small ghost" href={viewerId ? "/feed?schrijven=lijst#nieuw" : "/login?next=%2Ffeed%3Fschrijven%3Dlijst%23nieuw"}>+ Lijst maken</Link></div> : null}
     {search ? <div className="search-summary"><p>Resultaten voor <strong>“{search}”</strong></p><Link href={feedHref(type,popular,topic)}>Wis zoekopdracht ×</Link></div> : null}
     <FeedLive key={`${query}:${page}:${fingerprint}`} fingerprint={fingerprint} query={query} enabled={page === 1}/>
     <section className="timeline-posts" aria-label="Berichten">{result.error ? <div className="social-empty" role="alert"><h2>Berichten laden lukt nu niet.</h2><p>Probeer de feed hierboven te verversen.</p></div> : posts.length ? posts.map(post => <PostCard key={post.id} post={post} viewerId={viewerId}/>) : <div className="social-empty"><span className="empty-feed-mark" aria-hidden="true"><SocialIcon name={search ? "search" : tabIcons[type]}/></span><h2>{search ? "Nog niets gevonden." : type === "photo" ? "Een ander perspectief?" : type === "announcement" ? "Ruimte voor een update." : "Begin een nieuw gesprek."}</h2><p>{search ? "Probeer een andere zoekterm of wis je filters." : topic ? "Voor dit onderwerp zijn nog geen bijdragen geplaatst." : "De eerste bijdrage kan van jou zijn."}</p><Link className="button small ghost" href={search ? "/feed" : viewerId ? "#nieuw" : "/signup"}>{search ? "Bekijk alle berichten" : viewerId ? "Deel een bijdrage" : "Maak een account"}</Link>{topic && !search ? <Link className="empty-reset" href={feedHref(type,popular)}>Toon alle onderwerpen</Link> : null}</div>}</section>
