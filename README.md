@@ -29,3 +29,14 @@ Gebruik nooit een Supabase secret- of service-role-key in een NEXT_PUBLIC variab
 De tweede migratie is toegepast op project `frvkibbrbxiqrlmlfnxc`. Zij voegt `public.posts` toe, activeert RLS, geeft bezoekers leesrechten op gepubliceerde berichten en laat leden alleen hun eigen berichten plaatsen en beheren. Alleen de beheerder kan de publicatiestatus wijzigen. Bestaande profielrechten blijven behouden: bij een afgeschermd profiel staat publiek ‘Vardena-lid’ als auteur.
 
 De website meldt leesfouten apart van een lege berichtenlijst. Technische opslagfouten worden alleen met hun foutcode in serverlogs vastgelegd; bezoekers krijgen een Nederlandse melding.
+
+## Sociale functies
+
+- `/feed`: compacte tijdlijn, één like of dislike per account, reacties wisselen of verwijderen.
+- `/bericht/[id]`: vaste openbare link met de volledige tekst; delen gebruikt het deelmenu van het apparaat of kopieert de link.
+- `/account/profiel` en `/mensen`: publieke Vardena-profielen, zoeken en gebruikersnamen. Bestaande gedeelde accountprofielen worden niet openbaar gemaakt. Bestaande gebruikers activeren hun Vardena-profiel zelf; nieuwe registraties via Vardena krijgen dit profiel direct.
+- `/inbox`: gesprekken met ongelezen aantallen. Een gesprek controleert elke 5 seconden op nieuwe berichten zolang het tabblad zichtbaar is. Oudere berichten zijn gepagineerd; de inbox ververst elke 15 seconden.
+
+Voer na de berichtentabel ook `20260919160342_vardena_social_features.sql` uit. Deze migratie is toegepast op het gedeelde productieproject. `vardena_members`, `vardena_reactions` en `vardena_messages` gebruiken RLS. Beide leesviews gebruiken `security_invoker=true`.
+
+Privéberichten zijn alleen leesbaar voor afzender en ontvanger. De afzender kan de inhoud na verzending niet wijzigen; alleen de ontvanger kan een bericht als gelezen markeren. De API gebruikt `Cache-Control: private, no-store`. Publieke profielen bevatten geen e-mailadressen. Nieuwe functies gebruiken de bestaande publishable key en gebruikerssessie, geen service-role-key.

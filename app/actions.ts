@@ -23,7 +23,7 @@ function emailError(error: { code?: string; status?: number }) {
 export async function signUp(data: FormData) {
   const email=field(data,"email"), password=String(data.get("password") ?? ""), displayName=field(data,"displayName");
   const username=field(data,"username").toLowerCase().replace(/[^a-z0-9_]/g,"");
-  if(!validEmail(email)||password.length<8||!displayName||username.length<3) redirect("/signup?error=Vul+alle+velden+goed+in.");
+  if(!validEmail(email)||password.length<8||!displayName||displayName.length>80||username.length<3||username.length>30) redirect("/signup?error=Vul+alle+velden+goed+in.");
   const supabase=await createClient();
   const { data: auth, error }=await supabase.auth.signUp({email,password,options:{
     emailRedirectTo:confirmationUrl(),
@@ -35,6 +35,8 @@ export async function signUp(data: FormData) {
   }
   if(error) redirect("/signup?error="+encodeURIComponent(emailError(error)));
   if(auth.session) {
+    const { error: profileError } = await supabase.from("vardena_members").upsert({ id: auth.session.user.id, username, display_name: displayName, bio: "" }, { onConflict: "id" });
+    if(profileError) redirect("/account/profiel");
     revalidatePath("/","layout");
     redirect("/account/bevestigen");
   }
@@ -73,12 +75,15 @@ export async function resendConfirmation(data: FormData) {
 }
 
 export async function login(data: FormData) {
+  const requestedNext = field(data,"next");
+  const next = /^\/(?:feed|inbox(?:\/[a-f0-9-]{36})?|account\/profiel|bericht\/[a-f0-9-]{36})$/.test(requestedNext) ? requestedNext : "/feed";
+  const errorUrl = "/login?next=" + encodeURIComponent(next) + "&error=";
   const supabase=await createClient();
   const { error }=await supabase.auth.signInWithPassword({email:field(data,"email"),password:String(data.get("password") ?? "")});
-  if(error?.code === "email_not_confirmed") redirect("/login?error=Bevestig+eerst+je+e-mailadres.+Onder+het+formulier+kun+je+de+bevestigingsmail+opnieuw+aanvragen.");
-  if(error) redirect("/login?error=E-mailadres+of+wachtwoord+is+onjuist.");
+  if(error?.code === "email_not_confirmed") redirect(errorUrl+encodeURIComponent("Bevestig eerst je e-mailadres. Onder het formulier kun je de bevestigingsmail opnieuw aanvragen."));
+  if(error) redirect(errorUrl+encodeURIComponent("E-mailadres of wachtwoord is onjuist."));
   revalidatePath("/","layout");
-  redirect("/feed");
+  redirect(next);
 }
 
 export async function logout() {
